@@ -55,7 +55,7 @@ import edu.umd.cs.findbugs.internalAnnotations.SlashedClassName;
  * Detector for static fields of type {@link java.util.Calendar} or
  * {@link java.text.DateFormat} and their subclasses. Because
  * {@link java.util.Calendar} is unsafe for multithreaded use, static fields
- * look suspicous. To work correctly, all access would need to be synchronized
+ * look suspicious. To work correctly, all access would need to be synchronized
  * by the client which cannot be guaranteed.
  *
  * @author Daniel Schneller
@@ -76,9 +76,9 @@ public class StaticCalendarDetector extends OpcodeStackDetector {
     private static final String PROP_SKIP_SYNCHRONIZED_CHECK = "staticcal.skipsynccheck";
 
     /** The reporter to report to */
-    final private BugReporter reporter;
+    private final BugReporter reporter;
 
-    final private BugAccumulator bugAccumulator;
+    private final BugAccumulator bugAccumulator;
 
     /** Name of the class being inspected */
     private String currentClass;
@@ -224,9 +224,7 @@ public class StaticCalendarDetector extends OpcodeStackDetector {
                 currentMethod = obj;
                 currentLockDataFlow = getClassContext().getLockDataflow(currentMethod);
                 currentCFG = getClassContext().getCFG(currentMethod);
-            } catch (CFGBuilderException e) {
-                reporter.logError("Synchronization check in Static Calendar Detector caught an error.", e);
-            } catch (DataflowAnalysisException e) {
+            } catch (CFGBuilderException | DataflowAnalysisException e) {
                 reporter.logError("Synchronization check in Static Calendar Detector caught an error.", e);
             }
         }
@@ -256,12 +254,8 @@ public class StaticCalendarDetector extends OpcodeStackDetector {
 
         if (seen == Const.GETSTATIC) {
             XField f = getXFieldOperand();
-            if (pendingBugs.containsKey(f)) {
-                if (!isLocked()) {
-                    reporter.reportBug(pendingBugs.remove(f));
-
-                }
-
+            if (pendingBugs.containsKey(f) && !isLocked()) {
+                reporter.reportBug(pendingBugs.remove(f));
             }
         }
         // we are only interested in method calls
@@ -313,12 +307,12 @@ public class StaticCalendarDetector extends OpcodeStackDetector {
                 }
             }
 
-            if (!SystemProperties.getBoolean(PROP_SKIP_SYNCHRONIZED_CHECK)) {
-                // check synchronization
-                if (isLocked()) {
-                    return;
-                }
+            if (!SystemProperties.getBoolean(PROP_SKIP_SYNCHRONIZED_CHECK)
+                    // check synchronization
+                    && isLocked()) {
+                return;
             }
+
 
             // if we get here, we want to generate a report, depending on the
             // type
