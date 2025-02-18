@@ -25,6 +25,7 @@ import java.util.List;
 import javax.annotation.CheckForNull;
 
 import org.apache.bcel.Const;
+import org.apache.bcel.Repository;
 import org.apache.bcel.classfile.Attribute;
 import org.apache.bcel.classfile.ConstantPool;
 import org.apache.bcel.classfile.JavaClass;
@@ -70,9 +71,7 @@ public class NestedAccessUtil {
         if (supportsNestedAccess(javaClass)) {
             Attribute[] attributes = javaClass.getAttributes();
             for (Attribute attribute : attributes) {
-                if (attribute instanceof NestHost) {
-                    return true;
-                } else if (attribute instanceof NestMembers) {
+                if (attribute instanceof NestHost || attribute instanceof NestMembers) {
                     return true;
                 }
             }
@@ -149,8 +148,7 @@ public class NestedAccessUtil {
         for (Attribute sourceAttribute : sourceAttributes) {
             if (sourceAttribute instanceof NestMembers) {
                 NestMembers nestMembersAttribute = (NestMembers) sourceAttribute;
-                String[] nestMemberClassNames = nestMembersAttribute.getClassNames();
-                return nestMemberClassNames;
+                return nestMembersAttribute.getClassNames();
             }
         }
         return null;
@@ -173,10 +171,22 @@ public class NestedAccessUtil {
                 NestHost nestHostAttribute = (NestHost) attribute;
                 int targetHostClassIndex = nestHostAttribute.getHostClassIndex();
                 ConstantPool constantPool = nestHostAttribute.getConstantPool();
-                String nestHostClassName = constantPool.getConstantString(targetHostClassIndex, Const.CONSTANT_Class);
-                return nestHostClassName;
+                return constantPool.getConstantString(targetHostClassIndex, Const.CONSTANT_Class);
             }
         }
         return null;
+    }
+
+    public static List<JavaClass> getHostClasses(JavaClass javaClass) throws ClassNotFoundException {
+        List<JavaClass> list = new ArrayList<>();
+        if (javaClass != null) {
+            String hostClassName = getHostClassName(javaClass);
+            if (hostClassName != null) {
+                JavaClass hostClass = Repository.lookupClass(hostClassName);
+                list.add(hostClass);
+                list.addAll(getHostClasses(hostClass));
+            }
+        }
+        return list;
     }
 }

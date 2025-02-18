@@ -32,7 +32,7 @@ import edu.umd.cs.findbugs.classfile.FieldDescriptor;
 
 /**
  * A class to abstractly represent values in stack slots, indicating whether
- * thoses values can be null, non-null, null on some incoming path, or unknown.
+ * those values can be null, non-null, null on some incoming path, or unknown.
  *
  * @author David Hovemeyer
  * @see IsNullValueFrame
@@ -412,9 +412,8 @@ public class IsNullValue implements IsNullValueAnalysisFeatures, Debug {
 
         int combinedFlags = aFlags & bFlags;
 
-        if (!(a.isNullOnSomePath() || a.isDefinitelyNull()) && b.isException()) {
-            combinedFlags |= EXCEPTION;
-        } else if (!(b.isNullOnSomePath() || b.isDefinitelyNull()) && a.isException()) {
+        if ((!(a.isNullOnSomePath() || a.isDefinitelyNull()) && b.isException())
+                || (!(b.isNullOnSomePath() || b.isDefinitelyNull()) && a.isException())) {
             combinedFlags |= EXCEPTION;
         }
 

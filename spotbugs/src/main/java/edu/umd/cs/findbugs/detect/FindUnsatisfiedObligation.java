@@ -164,7 +164,8 @@ public class FindUnsatisfiedObligation extends CFGDetector {
      * along paths where an obligation appears to be leaked.
      */
     private static class PossibleObligationTransfer {
-        Obligation consumed, produced;
+        Obligation consumed;
+        Obligation produced;
 
         public PossibleObligationTransfer(@Nonnull Obligation consumed, @Nonnull Obligation produced) {
             this.consumed = consumed;
@@ -401,13 +402,9 @@ public class FindUnsatisfiedObligation extends CFGDetector {
             @Override
             public void visitBasicBlock(BasicBlock basicBlock) {
                 curBlock = basicBlock;
-
-                if (COMPUTE_TRANSFERS && basicBlock == cfg.getExit()) {
-                    // We're at the CFG exit.
-
-                    if (adjustedLeakCount == 1) {
-                        applyPossibleObligationTransfers();
-                    }
+                // We're at the CFG exit.
+                if (COMPUTE_TRANSFERS && basicBlock == cfg.getExit() && adjustedLeakCount == 1) {
+                    applyPossibleObligationTransfers();
                 }
             }
 
@@ -647,7 +644,7 @@ public class FindUnsatisfiedObligation extends CFGDetector {
             // If we're tracking, e.g., InputStream obligations,
             // and we see a FileInputStream reference being assigned
             // to a field (or returned from a method),
-            // then the false-positive supressions heuristic should apply.
+            // then the false-positive suppressions heuristic should apply.
             //
 
             return subtypes2.isSubtype(type, obligationType);

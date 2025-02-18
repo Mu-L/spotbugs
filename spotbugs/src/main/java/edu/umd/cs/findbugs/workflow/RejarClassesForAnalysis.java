@@ -108,7 +108,7 @@ public class RejarClassesForAnalysis {
 
             public boolean matchesEverything() {
                 for (String p : prefixes) {
-                    if (p.length() == 0) {
+                    if (p.isEmpty()) {
                         return true;
                     }
                 }
@@ -359,7 +359,7 @@ public class RejarClassesForAnalysis {
                     }
                     String name = ze.getName();
 
-                    String dottedName = name.replace('/', '.');
+                    String dottedName = ClassName.toDottedClassName(name);
                     if (exclude(dottedName)) {
                         return;
                     }
@@ -416,15 +416,13 @@ public class RejarClassesForAnalysis {
                 }
 
                 String name = ze.getName();
-                String dottedName = name.replace('/', '.');
+                String dottedName = ClassName.toDottedClassName(name);
                 if (!exclude(dottedName)) {
                     classFileFound = true;
                     long timestamp = ze.getTime();
                     Long oldTimestamp = copied.get(name);
-                    if (oldTimestamp == null) {
-                        copied.put(name, timestamp);
-                        copyFrom.put(name, f);
-                    } else if (!commandLine.ignoreTimestamps && oldTimestamp < timestamp) {
+                    if (oldTimestamp == null
+                            || (!commandLine.ignoreTimestamps && oldTimestamp < timestamp)) {
                         copied.put(name, timestamp);
                         copyFrom.put(name, f);
                     }
@@ -498,7 +496,7 @@ public class RejarClassesForAnalysis {
 
 
                 String name = ze.getName();
-                String dottedName = name.replace('/', '.');
+                String dottedName = ClassName.toDottedClassName(name);
                 if (exclude(dottedName)) {
                     return;
                 }
@@ -547,7 +545,7 @@ public class RejarClassesForAnalysis {
                 }
 
                 String name = ze.getName();
-                String dottedName = name.replace('/', '.');
+                String dottedName = ClassName.toDottedClassName(name);
 
                 if (exclude(dottedName)) {
                     return;
@@ -626,7 +624,7 @@ public class RejarClassesForAnalysis {
         zipIn.close();
     }
 
-    private void advanceAuxiliaryOut() throws IOException, FileNotFoundException {
+    private void advanceAuxiliaryOut() throws IOException {
         auxiliaryOut.close();
         auxiliaryOut = createZipFile(getNextAuxiliaryFileOutput());
     }

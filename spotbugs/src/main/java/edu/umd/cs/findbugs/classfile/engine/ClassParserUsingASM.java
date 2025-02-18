@@ -149,7 +149,11 @@ public class ClassParserUsingASM implements ClassParserInterface {
 
         boolean isAccessMethod;
 
-        String accessOwner, accessName, accessDesc;
+        String accessOwner;
+
+        String accessName;
+
+        String accessDesc;
 
         boolean accessForField;
 
@@ -508,13 +512,13 @@ public class ClassParserUsingASM implements ClassParserInterface {
         public org.objectweb.asm.AnnotationVisitor visitTypeAnnotation(int typeRef, TypePath typePath,
                 String desc, boolean visible) {
             TypeReference typeRefObject = new TypeReference(typeRef);
-            if (typeRefObject.getSort() == TypeReference.METHOD_FORMAL_PARAMETER) {
+            if (typeRefObject.getSort() == TypeReference.METHOD_FORMAL_PARAMETER && typePath == null) {
                 // treat as parameter annotation
                 AnnotationValue value = new AnnotationValue(desc);
                 mBuilder.addParameterAnnotation(typeRefObject.getFormalParameterIndex(), desc, value);
                 return value.getAnnotationVisitor();
             }
-            if (typeRefObject.getSort() == TypeReference.METHOD_RETURN) {
+            if (typeRefObject.getSort() == TypeReference.METHOD_RETURN && typePath == null) {
                 // treat as method annotation
                 AnnotationValue value = new AnnotationValue(desc);
                 mBuilder.addAnnotation(desc, value);
@@ -626,15 +630,11 @@ public class ClassParserUsingASM implements ClassParserInterface {
 
             @Override
             public void visitInnerClass(String name, String outerName, String innerName, int access) {
-                if (name.equals(slashedClassName) && outerName != null) {
-                    if (cBuilder instanceof ClassInfo.Builder) {
-                        ClassDescriptor outerClassDescriptor = DescriptorFactory.createClassDescriptor(outerName);
-                        ((ClassInfo.Builder) cBuilder).setImmediateEnclosingClass(outerClassDescriptor);
-                        ((ClassInfo.Builder) cBuilder).setAccessFlags(access);
-                    }
-
+                if (name.equals(slashedClassName) && outerName != null && cBuilder instanceof ClassInfo.Builder) {
+                    ClassDescriptor outerClassDescriptor = DescriptorFactory.createClassDescriptor(outerName);
+                    ((ClassInfo.Builder) cBuilder).setImmediateEnclosingClass(outerClassDescriptor);
+                    ((ClassInfo.Builder) cBuilder).setAccessFlags(access);
                 }
-
             }
 
             @Override
@@ -686,6 +686,7 @@ public class ClassParserUsingASM implements ClassParserInterface {
             case Const.CONSTANT_Integer:
             case Const.CONSTANT_Float:
             case Const.CONSTANT_NameAndType:
+            case Const.CONSTANT_Dynamic:
             case Const.CONSTANT_InvokeDynamic:
                 size = 5;
                 break;

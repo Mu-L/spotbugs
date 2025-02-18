@@ -2,16 +2,28 @@ apply from: "$rootDir/gradle/checkstyle.gradle"
 apply from: "$rootDir/gradle/javadoc.gradle"
 apply from: "$rootDir/gradle/maven.gradle"
 
+tasks.named('compileJava', JavaCompile).configure {
+    options.release = 11
+}
+
+eclipse {
+  jdt {
+    sourceCompatibility = 11
+    targetCompatibility = 11
+    javaRuntimeName = "JavaSE-11"
+  }
+}
+
 dependencies {
   api 'com.google.code.findbugs:jsr305:3.0.2'
 }
 
-def manifestSpec = manifest {
+def manifestSpec = java.manifest {
   attributes 'Bundle-Name': 'spotbugs-annotations',
                'Bundle-SymbolicName': 'spotbugs-annotations',
                'Bundle-Version': project.version.replace('-', '.'),
                'Export-Package': 'edu.umd.cs.findbugs.annotations',
-               'Bundle-RequiredExecutionEnvironment': 'J2SE-1.5',
+               'Bundle-RequiredExecutionEnvironment': 'JavaSE-11',
                'Bundle-ManifestVersion': '2'
 }
 
@@ -29,7 +41,7 @@ def jar = tasks.named('jar', Jar) {
                'Bundle-SymbolicName': 'spotbugs-annotations',
                'Bundle-Version': project.version.replace('-', '.'),
                'Export-Package': 'edu.umd.cs.findbugs.annotations',
-               'Bundle-RequiredExecutionEnvironment': 'J2SE-1.5',
+               'Bundle-RequiredExecutionEnvironment': 'JavaSE-11',
                'Bundle-ManifestVersion': '2'
   }
 }
@@ -41,7 +53,7 @@ tasks.named('javadoc', Javadoc).configure {
   }
   doFirst {
     // This is supposed to enable everything except "missing" but doesn't work with gradle
-    // See http://docs.oracle.com/javase/8/docs/technotes/tools/unix/javadoc.html
+    // See https://docs.oracle.com/en/java/javase/11/tools/javadoc.html
     options.addBooleanOption('Xdoclint:all,-missing', true)
   }
   doLast {

@@ -112,8 +112,7 @@ public class TypeQualifierNullnessAnnotationDatabase implements INullnessAnnotat
         try {
             TypeQualifierAnnotation tqa = TypeQualifierApplications.getInheritedTypeQualifierAnnotation(m,
                     parameter, nonnullTypeQualifierValue);
-            NullnessAnnotation result = toNullnessAnnotation(tqa);
-            return result;
+            return toNullnessAnnotation(tqa);
         } finally {
             profiler.end(this.getClass());
         }
@@ -124,8 +123,7 @@ public class TypeQualifierNullnessAnnotationDatabase implements INullnessAnnotat
         profiler.start(this.getClass());
         try {
             TypeQualifierAnnotation tqa = TypeQualifierApplications.getInheritedTypeQualifierAnnotation(m, nonnullTypeQualifierValue);
-            NullnessAnnotation result = toNullnessAnnotation(tqa);
-            return result;
+            return toNullnessAnnotation(tqa);
         } finally {
             profiler.end(this.getClass());
         }
@@ -187,11 +185,9 @@ public class TypeQualifierNullnessAnnotationDatabase implements INullnessAnnotat
         if (tqa == null && param == 0) {
             String name = m.getName();
             String signature = m.getSignature();
-            if ("main".equals(name) && "([Ljava/lang/String;)V".equals(signature) && m.isStatic() && m.isPublic()) {
-                return true;
-            } else if (assertsFirstParameterIsNonnull(m)) {
-                return true;
-            } else if ("compareTo".equals(name) && ")Z".equals(signature.substring(signature.indexOf(';') + 1)) && !m.isStatic()) {
+            if (("main".equals(name) && "([Ljava/lang/String;)V".equals(signature) && m.isStatic() && m.isPublic())
+                    || assertsFirstParameterIsNonnull(m)
+                    || ("compareTo".equals(name) && ")Z".equals(signature.substring(signature.indexOf(';') + 1)) && !m.isStatic())) {
                 return true;
             }
         }

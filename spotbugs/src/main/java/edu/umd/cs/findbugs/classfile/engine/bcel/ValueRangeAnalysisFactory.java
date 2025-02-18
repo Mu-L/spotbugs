@@ -38,6 +38,7 @@ import org.apache.bcel.classfile.Method;
 import org.apache.bcel.generic.ARRAYLENGTH;
 import org.apache.bcel.generic.CPInstruction;
 import org.apache.bcel.generic.ConstantPushInstruction;
+import org.apache.bcel.generic.ATHROW;
 import org.apache.bcel.generic.GETFIELD;
 import org.apache.bcel.generic.GETSTATIC;
 import org.apache.bcel.generic.IFNE;
@@ -74,7 +75,8 @@ import edu.umd.cs.findbugs.classfile.engine.bcel.FinallyDuplicatesInfoFactory.Fi
  */
 public class ValueRangeAnalysisFactory implements IMethodAnalysisEngine<ValueRangeAnalysisFactory.ValueRangeAnalysis> {
     private static class TypeLongRange {
-        long min, max;
+        long min;
+        long max;
         String signature;
 
         public TypeLongRange(long min, long max, String signature) {
@@ -112,12 +114,12 @@ public class ValueRangeAnalysisFactory implements IMethodAnalysisEngine<ValueRan
         private final TypeLongRange range;
 
         public LongRangeSet(String type) {
-            TypeLongRange range = typeRanges.get(type);
-            if (range == null) {
+            TypeLongRange typeLongRange = typeRanges.get(type);
+            if (typeLongRange == null) {
                 throw new IllegalArgumentException("Type is not supported: " + type);
             }
-            map.put(range.min, range.max);
-            this.range = range;
+            map.put(typeLongRange.min, typeLongRange.max);
+            this.range = typeLongRange;
         }
 
         private LongRangeSet(TypeLongRange range, long from, long to) {
@@ -258,7 +260,7 @@ public class ValueRangeAnalysisFactory implements IMethodAnalysisEngine<ValueRan
         @Override
         public Iterator<LongRangeSet> iterator() {
             final Iterator<Entry<Long, Long>> iterator = map.entrySet().iterator();
-            return new Iterator<ValueRangeAnalysisFactory.LongRangeSet>() {
+            return new Iterator<>() {
                 @Override
                 public boolean hasNext() {
                     return iterator.hasNext();
@@ -320,8 +322,10 @@ public class ValueRangeAnalysisFactory implements IMethodAnalysisEngine<ValueRan
 
     private static class Branch {
         final LongRangeSet trueSet;
-        final LongRangeSet trueReachedSet, falseReachedSet;
-        final String trueCondition, falseCondition;
+        final LongRangeSet trueReachedSet;
+        final LongRangeSet falseReachedSet;
+        final String trueCondition;
+        final String falseCondition;
         final Number number;
         final Set<Long> numbers = new HashSet<>();
         final String varName;
@@ -476,7 +480,8 @@ public class ValueRangeAnalysisFactory implements IMethodAnalysisEngine<ValueRan
             if (inst instanceof LoadInstruction) {
                 int index = ((LoadInstruction) inst).getIndex();
                 LocalVariable lv = lvTable == null ? null : lvTable.getLocalVariable(index, ih.getPosition());
-                String name, signature;
+                String name;
+                String signature;
                 if (lv == null) {
                     name = "local$" + index;
                     if (types.containsKey(index)) {
@@ -745,7 +750,8 @@ public class ValueRangeAnalysisFactory implements IMethodAnalysisEngine<ValueRan
                     BasicBlock trueTarget = edge.getTarget();
                     BasicBlock falseTarget = cfg.getSuccessorWithEdgeType(edge.getSource(), EdgeTypes.FALL_THROUGH_EDGE);
                     String condition;
-                    BasicBlock deadTarget, aliveTarget;
+                    BasicBlock deadTarget;
+                    BasicBlock aliveTarget;
                     if (branch.trueReachedSet.isEmpty()) {
                         condition = branch.varName + " " + branch.falseCondition;
                         deadTarget = trueTarget;
@@ -772,7 +778,7 @@ public class ValueRangeAnalysisFactory implements IMethodAnalysisEngine<ValueRan
                         GETSTATIC getStatic = (GETSTATIC) ih.getInstruction();
                         if ("$assertionsDisabled".equals(getStatic.getFieldName(methodGen.getConstantPool()))
                                 && "Z".equals(getStatic.getSignature(methodGen.getConstantPool()))) {
-                            int end = ((IFNE) next).getTarget().getPosition();
+                            int end = findEndOfAssertBlock(ih);
                             assertionBlocks.set(ih.getNext().getPosition(), end);
                         }
                     }
@@ -792,6 +798,40 @@ public class ValueRangeAnalysisFactory implements IMethodAnalysisEngine<ValueRan
             return new ValueRangeAnalysis(redundantConditions);
         }
         return null;
+    }
+
+    /**
+     * Expecting an assert block to look like this:
+     *<code>
+     * 6  getstatic ghIssues.Issue608.$assertionsDisabled : boolean [7]<br>
+     * 9  ifne 0<br>
+     * 12  iload_1 [i]  // Loading some variable named "i"<br>
+     * 13  bipush 12    // Loading a constant 12<br>
+     * 15  if_icmplt 0  // Comparing i and 12<br>
+     * 18  new java.lang.AssertionError [13]<br>
+     * 21  dup<br>
+     * 22  ldc <String "assertion failure message"> [15]<br>
+     * 24  invokespecial java.lang.AssertionError(java.lang.Object) [17]<br>
+     * 27  athrow<br>
+     *</code>
+     * @param ih The InstructionHandle corresponding to the <code>ifne 0</code> in the above sample
+     * @return The position for the final <code>athrow</code>
+     */
+    private int findEndOfAssertBlock(InstructionHandle ih) {
+        InstructionHandle next = ih.getNext();
+        int end = ih.getPosition();
+
+        while (next != null && !(next.getInstruction() instanceof ATHROW)) {
+            end = next.getPosition();
+
+            next = next.getNext();
+        }
+
+        if (next != null) {
+            return next.getPosition();
+        }
+
+        return end;
     }
 
     private static Location getLocation(BasicBlock block) {

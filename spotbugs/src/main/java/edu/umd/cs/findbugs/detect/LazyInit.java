@@ -268,7 +268,8 @@ public final class LazyInit extends ByteCodePatternDetector implements Stateless
         // or if the extent does not appear to create a new object.
         LockDataflow lockDataflow = classContext.getLockDataflow(method);
         LockSet lockSet = null;
-        boolean sawNEW = false, sawINVOKE = false;
+        boolean sawNEW = false;
+        boolean sawINVOKE = false;
         for (BasicBlock block : cfg.getBlocks(extent)) {
             for (Iterator<InstructionHandle> j = block.instructionIterator(); j.hasNext();) {
                 InstructionHandle handle = j.next();
@@ -348,10 +349,7 @@ public final class LazyInit extends ByteCodePatternDetector implements Stateless
             return;
         }
         int priority = LOW_PRIORITY;
-        boolean isDefaultAccess = (method.getAccessFlags() & (Const.ACC_PUBLIC | Const.ACC_PRIVATE | Const.ACC_PROTECTED)) == 0;
-        if (method.isPublic()) {
-            priority = NORMAL_PRIORITY;
-        } else if (method.isProtected() || isDefaultAccess) {
+        if (!method.isPrivate()) {
             priority = NORMAL_PRIORITY;
         }
         if (signature.startsWith("[") || signature.startsWith("Ljava/util/")) {
@@ -372,7 +370,7 @@ public final class LazyInit extends ByteCodePatternDetector implements Stateless
         String sourceFile = javaClass.getSourceFileName();
         bugReporter.reportBug(new BugInstance(this, sawGetStaticAfterPutStatic ? "LI_LAZY_INIT_UPDATE_STATIC"
                 : "LI_LAZY_INIT_STATIC", priority).addClassAndMethod(methodGen, sourceFile).addField(xfield)
-                        .describe("FIELD_ON").addSourceLine(classContext, methodGen, sourceFile, start, end));
+                .describe("FIELD_ON").addSourceLine(classContext, methodGen, sourceFile, start, end));
         reported.set(testInstructionHandle.getPosition());
 
     }

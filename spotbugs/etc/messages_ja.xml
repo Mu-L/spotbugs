@@ -3972,7 +3972,7 @@ Web サーバは，一般的にサーブレットや JSP クラスのインス�
   </BugPattern>
 
   <BugPattern type="MS_EXPOSE_REP">
-    <ShortDescription>配列を返すことによって内部表現を暴露するかもしれない public static メソッド</ShortDescription>
+    <ShortDescription>配列または可変オブジェクトを返すことによって内部表現を暴露するかもしれない public static メソッド</ShortDescription>
     <LongDescription>{1} は，{2.givenClass} を返すことによって，内部表現を暴露するかもしれません。</LongDescription>
     <Details>
 <![CDATA[
@@ -4096,23 +4096,6 @@ Web サーバは，一般的にサーブレットや JSP クラスのインス�
 2つ以上のロックを保持して，モニタで待機させるとデッドロックを引き起こすことがあります。
 <code>wait</code> メソッドを呼び出すと，待機しているオブジェクトのロックを解除するだけで，その他のロックは解除しません。
 これは必ずしもバグではありませんが厳密に調べる価値があります。
-</p>
-]]>
-    </Details>
-  </BugPattern>
-
-  <BugPattern type="TLW_TWO_LOCK_NOTIFY" deprecated="true"> <!-- never generated -->
-    <ShortDescription>Notify with two locks held</ShortDescription>
-    <LongDescription>notify() or notifyAll*() with two locks held in {1}</LongDescription>
-    <Details>
-<![CDATA[
-  <p> The code calls notify() or notifyAll() while two locks
-  are held. If this notification is intended to wake up a wait()
-  that is holding the same locks, it may deadlock, since the wait
-  will only give up one lock and the notify will be unable to get both locks,
-  and thus the notify will not succeed.
-   &nbsp; If there is also a warning about a two lock wait, the
-   probably of a bug is quite high.
 </p>
 ]]>
     </Details>
@@ -4474,7 +4457,7 @@ private Long getNotificationSequenceNumber() {
     <Details>
 <![CDATA[
 <p>
-<code>final</code> ではない <code>public static</code> フィールドは悪意のあるコードや別のパッケージによって思いがけず変更される可能性があります。
+<code>final</code> ではない <code>public static</code> または <code>protected static</code> フィールドは悪意のあるコードや別のパッケージによって思いがけず変更される可能性があります。
 脆弱性を回避するためにフィールドを <code>final</code> にします。
 しかしながら，スタティックイニシャライザには複数のフィールドへの書き込みがあるので，何らかのリファクタリングを必要とするでしょう。
 </p>
@@ -4488,7 +4471,7 @@ private Long getNotificationSequenceNumber() {
     <Details>
 <![CDATA[
 <p>
-<code>final</code> ではない <code>public static</code> フィールドは悪意のあるコードや別のパッケージによって思いがけず変更される可能性があります。
+<code>final</code> ではない <code>public static</code> または <code>protected static</code> フィールドは悪意のあるコードや別のパッケージによって思いがけず変更される可能性があります。
 脆弱性を回避するためにフィールドを <code>final</code> にします。
 </p>
 ]]>
@@ -6214,27 +6197,6 @@ dateString = dateString.trim();
     </Details>
   </BugPattern>
 
-  <BugPattern type="RCN_REDUNDANT_CHECKED_NULL_COMPARISON" deprecated="true"> <!-- deprecated in favor of two separate RCN_ patterns -->
-    <ShortDescription>Redundant comparison to null of previously checked value</ShortDescription>
-    <LongDescription>Redundant comparison to null of previously checked {2} in {1}</LongDescription>
-    <Details>
-<![CDATA[
-<p> This method contains a redundant comparison of a reference value
-to null. Two types of redundant comparison are reported:
-</p>
-<ul>
-<li> Both values compared are definitely null</li>
-<li> One value is definitely null and the other is definitely not null</li>
-</ul>
-
-<p> This particular warning generally indicates that a
-value known not to be null was checked against null.
-While the check is not necessary, it may simply be a case
-of defensive programming.</p>
-]]>
-    </Details>
-  </BugPattern>
-
   <BugPattern type="UL_UNRELEASED_LOCK">
     <ShortDescription>すべての経路でロックが解除されないメソッド</ShortDescription>
     <LongDescription>{1} は，すべての経路でロックが解除されません。</LongDescription>
@@ -6897,23 +6859,6 @@ for(int i = 0; i &lt; 4; i++)
     </Details>
   </BugPattern>
 
-  <BugPattern type="LI_LAZY_INIT_INSTANCE" deprecated="true"> <!-- never generated? -->
-    <ShortDescription>Incorrect lazy initialization of instance field</ShortDescription>
-    <LongDescription>Incorrect lazy initialization of instance field {2} in {1}</LongDescription>
-    <Details>
-<![CDATA[
-<p> This method contains an unsynchronized lazy initialization of a non-volatile field.
-Because the compiler or processor may reorder instructions,
-threads are not guaranteed to see a completely initialized object,
-<em>if the method can be called by multiple threads</em>.
-You can make the field volatile to correct the problem.
-For more information, see the
-<a href="http://www.cs.umd.edu/~pugh/java/memoryModel/">Java Memory Model web site</a>.
-</p>
-]]>
-    </Details>
-  </BugPattern>
-
   <BugPattern type="LI_LAZY_INIT_STATIC">
     <ShortDescription>static フィールドの間違った遅延初期化</ShortDescription>
     <LongDescription>static フィールド {2} の間違った遅延初期化。{1}</LongDescription>
@@ -7282,17 +7227,6 @@ JUnit の <code>TestCase</code> クラスで，どんなテストメソッドも
 スーパークラスは，java.awt.event や javax.swing.event パッケージで定義されているリスナを実装する <code>Adapter</code> です。
 その結果，イベントが発生するときこのメソッドは呼び出されません。
 </p>
-]]>
-    </Details>
-  </BugPattern>
-
-  <BugPattern type="BRSA_BAD_RESULTSET_ACCESS" deprecated="true"> <!-- deprecated in favor of SQL_BAD_RESULTSET_ACCESS -->
-    <ShortDescription>Method attempts to access a result set field with index 0</ShortDescription>
-    <LongDescription>{1} attempts to access a result set field with index 0</LongDescription>
-    <Details>
-<![CDATA[
-<p> A call to getXXX or updateXXX methods of a result set was made where the
-field index is 0. As ResultSet fields start at index 1, this is always a mistake.</p>
 ]]>
     </Details>
   </BugPattern>
@@ -7883,6 +7817,13 @@ double value2 = x / (double) y;
 <p>
 この書式文字列は改行文字 (<code>\n</code>) が含まれています。
 一般的に書式文字列には <code>%n</code> を使用することがより望ましいです。<code>%n</code> は，プラットフォーム特有の行セパレータを作り出します。
+
+Java 15 複数行テキスト ブロック
+
+<code>String value = """
+                first line%n\
+                second line%n\
+                """;</code>
 </p>
 ]]>
   </Details>
@@ -8001,20 +7942,6 @@ SpotBugs はそのようなケースを検出して抑止しようとします�
 <p>
 チェックされている値が <code>null</code> であることが保証されているので， <code>instanceof</code> は常に <code>false</code> を返します。
 これは安全で，誤解や論理エラーを指摘していないことを確認してください。
-</p>
-]]>
-    </Details>
-  </BugPattern>
-
-  <BugPattern type="BC_NULL_INSTANCEOF" deprecated="true"> <!-- deprecated in favor of NP_NULL_INSTANCEOF -->
-    <ShortDescription>A known null value is checked to see if it is an instance of a type</ShortDescription>
-    <LongDescription>A known null value is checked to see if it is an instance of {2} in {1}</LongDescription>
-    <Details>
-<![CDATA[
-<p>
-This instanceof test will always return false, since the value being checked is guaranteed to be null.
-Although this is safe, make sure it isn't
-an indication of some misunderstanding or some other logic error.
 </p>
 ]]>
     </Details>
@@ -8272,7 +8199,7 @@ Joshua Bloch が <a href="http://googleresearch.blogspot.com/2006/06/extra-extra
 <![CDATA[
 <p>
 このコードは <code>x % 2 == 1</code> を使用して値が負数なのか確かめていますが，負数 (たとえば， <code>(-5) % 2 == -1</code>) なので機能しません。
-奇数チェックを意図しているなら， <code>x &amp; 1 == 1</code> または <code>x % 2 != 0</code> を使用することを検討してください。
+奇数チェックを意図しているなら， <code>(x &amp; 1) == 1</code> または <code>x % 2 != 0</code> を使用することを検討してください。
 </p>
 ]]>
     </Details>

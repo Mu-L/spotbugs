@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import edu.umd.cs.findbugs.util.ClassName;
 import org.apache.bcel.Const;
 import org.apache.bcel.classfile.Code;
 
@@ -54,8 +55,6 @@ public class OverridingEqualsNotSymmetrical extends OpcodeStackDetector implemen
     private static final String EQUALS_NAME = "equals";
 
     private static final String EQUALS_SIGNATURE = "(Ljava/lang/Object;)Z";
-
-    private static final String STATIC_EQUALS_SIGNATURE = "(Ljava/lang/Object;Ljava/lang/Object;)Z";
 
     Map<ClassDescriptor, Set<ClassDescriptor>> classesWithGetClassBasedEquals = new HashMap<>();
 
@@ -158,7 +157,7 @@ public class OverridingEqualsNotSymmetrical extends OpcodeStackDetector implemen
 
             }
 
-            String superClassName = getSuperclassName().replace('/', '.');
+            String superClassName = ClassName.toDottedClassName(getSuperclassName());
             if (!Values.DOTTED_JAVA_LANG_OBJECT.equals(superClassName)) {
                 parentMap.put(classAnnotation, new ClassAnnotation(superClassName));
             }
@@ -168,7 +167,11 @@ public class OverridingEqualsNotSymmetrical extends OpcodeStackDetector implemen
         bugAccumulator.reportAccumulatedBugs();
     }
 
-    boolean sawInstanceOf, sawInstanceOfSupertype, sawCheckedCast;
+    boolean sawInstanceOf;
+
+    boolean sawInstanceOfSupertype;
+
+    boolean sawCheckedCast;
 
     boolean sawGetClass;
 
@@ -182,11 +185,15 @@ public class OverridingEqualsNotSymmetrical extends OpcodeStackDetector implemen
 
     boolean sawInitialIdentityCheck;
 
-    boolean alwaysTrue, alwaysFalse;
+    boolean alwaysTrue;
+
+    boolean alwaysFalse;
 
     int equalsCalls;
 
-    boolean sawGoodEqualsClass, sawBadEqualsClass;
+    boolean sawGoodEqualsClass;
+
+    boolean sawBadEqualsClass;
 
     boolean sawCompare;
 

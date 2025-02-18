@@ -18,7 +18,12 @@
  */
 package edu.umd.cs.findbugs.test;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,9 +33,27 @@ import org.junit.jupiter.api.extension.ExtendWith;
  *
  */
 @ExtendWith(SpotBugsExtension.class)
-public class SpotBugsExtensionTest {
+class SpotBugsExtensionTest {
     @Test
-    public void test(SpotBugsRunner spotbugs) {
+    void test(SpotBugsRunner spotbugs) {
+        addAuxClassPathEntry(spotbugs, "build/spotbugs/auxclasspath/spotbugsMain");
+        addAuxClassPathEntry(spotbugs, "build/spotbugs/auxclasspath/spotbugsTest");
         spotbugs.performAnalysis(Paths.get("build/classes/java/main/edu/umd/cs/findbugs/test/SpotBugsRunner.class"));
+    }
+
+    private void addAuxClassPathEntry(SpotBugsRunner spotbugs, String dir) {
+        final Path dependencies = Paths.get(dir);
+        try {
+            final List<String> lines = Files.readAllLines(dependencies);
+            for (String line : lines) {
+                Path path = Paths.get(line);
+                if (Files.isReadable(path)) {
+                    spotbugs.addAuxClasspathEntry(e -> {
+                    }, path);
+                }
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }
